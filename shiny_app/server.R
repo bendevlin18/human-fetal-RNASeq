@@ -1,0 +1,764 @@
+
+
+######################################
+###                                ###
+###     server.R file for          ###
+###       human-fetal-seq          ###
+###        application             ###
+###                                ###
+######################################
+
+
+
+server <- function (input, output, session) {
+  
+  updateSelectizeInput(session, 'entered_genes', choices = choice_genes, server = TRUE)
+  
+  output$landing_text <- renderUI ({
+    
+    x <- list(tags$h1("Welcome to Fetal-Brain-seq!", style = 'text-align: center'),
+              img(src="test.gif", height = '500px', width='600px', style = "display: block; margin-left: auto; margin-right: auto;"),
+              tags$h1(""),
+              tags$h5("This website contains interactive visualizations and statistics of bulk RNA sequencing data
+              from matched human fetal brain and placental tissue. The Correlation Plots tab will show you if your gene of 
+              interest is correlated with maternal triglyceride accumulation, a proxy for dietary fat intake. The Sex Differences
+              tab will show you if your gene of interest is differentially expressed by sex." ,style = 'text-align: center'),
+              tags$hr(),
+              tags$h3("",
+                      "Read the paper",
+                      tags$a(href="https://www.biorxiv.org/content/10.1101/2021.11.12.468408v2", 
+                             "here"), style = 'text-align: center'))
+    tagList(x)
+  })
+  
+  
+  output$table1 <- renderDT(options = list(pageLength = 34),{
+    
+    gene_of_interest <- input$entered_genes
+    
+    goi_df_brain <- brain_tpm_df[brain_tpm_df$hgnc_symbol == gene_of_interest, ]
+    goi_df_placenta <- placenta_tpm_df[placenta_tpm_df$hgnc_symbol == gene_of_interest, ]
+    goi_df_brain_t <- data.frame(t(goi_df_brain))
+    goi_df_placenta_t <- data.frame(t(goi_df_placenta))
+    goi_df_brain_t$SampleID <- rownames(goi_df_brain_t)
+    goi_df_placenta_t$SampleID <- rownames(goi_df_placenta_t)
+    for (row in rownames(goi_df_brain_t)) {
+      goi_df_brain_t$SampleID[goi_df_brain_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+    }
+    for (row in rownames(goi_df_placenta_t)) { 
+      goi_df_placenta_t$SampleID[goi_df_placenta_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+    }
+    brain_merged <- merge(goi_df_brain_t, metadata, by.x="SampleID", by.y="sampleID")
+    brain_merged <- brain_merged %>%
+      rename(Brain = starts_with("X"),
+             Sex = sex,
+             Age = age,
+             Maternal_Triglycerides = trig,
+             Brain_5HT = brain_5ht,
+             Placenta_5HT = plac_5ht)
+    
+    placenta_merged <- merge(goi_df_placenta_t, metadata, by.x="SampleID", by.y="sampleID")
+    placenta_merged <- placenta_merged %>%
+      rename(Placenta = starts_with("X"),
+             Sex = sex,
+             Age = age,
+             Maternal_Triglycerides = trig,
+             Brain_5HT = brain_5ht,
+             Placenta_5HT = plac_5ht)
+    
+    
+    both_merged <- merge(goi_df_placenta_t, brain_merged, by.x = "SampleID", by.y = "SampleID")
+    both_merged <- both_merged %>%
+      rename(Placenta = starts_with("X"))
+    
+    merged <- both_merged[order(both_merged$Sex),]
+    merged_final <- subset(merged, select=-c(exclude, Notes))
+   merged_final
+  })
+  
+  
+  
+##Ben's original 
+##  output$plot1 <- renderPlotly({
+##    
+##    goi <- input$entered_genes
+##    goi_df <- brain_df[brain_df$hgnc_symbol == goi,]
+##    goi_df <- data.frame(t(goi_df))
+##    goi_df$sampleIDs <- rownames(goi_df)
+##    rownames(goi_df) <- NULL
+##    goi_df <- goi_df[6:length(rownames(goi_df)) - 1,]
+##    colnames(goi_df)[1] <- goi
+##    goi_df$sampleID <- goi_df$sampleIDs
+##    goi_df$region <- goi_df$sampleIDs
+##    for (sample in goi_df$sampleIDs) {
+##      goi_df$sampleID[goi_df$sampleIDs == sample] <- str_split(sample, '_')[[1]][1]
+##      goi_df$region[goi_df$sampleIDs == sample] <- str_split(sample, '_')[[1]][2]
+##    }
+##  
+##  merged <- merge(goi_df, metadata, by.x="sampleID", by.y="sampleID")
+##  merged[, goi] <- sapply(merged[, goi], as.numeric)
+##  merged$sex <- factor(merged$sex, levels = c('Male', 'Female'))
+
+## p <- ggscatter(merged, x = 'trig', y = goi, add = 'reg.line', conf.int = TRUE, cor.method = "pearson")+
+##      ggtitle(paste(goi, 'Brain', sep = ' '))+
+##      facet_wrap(~sex)+
+##      corr_plot_settings
+      
+  
+##  fig <- ggplotly(p, height = shinybrowser::get_height()-500, width = shinybrowser::get_width()-500)
+##  fig %>% layout(margin = list(b = 90))
+  
+##  })
+  
+  output$plot1 <- renderPlotly({
+    gene_of_interest <- input$entered_genes
+    
+    goi_df_brain <- brain_tpm_df[brain_tpm_df$hgnc_symbol == gene_of_interest, ]
+    goi_df_placenta <- placenta_tpm_df[placenta_tpm_df$hgnc_symbol == gene_of_interest, ]
+    
+    if (dim(goi_df_placenta)[1]==0 && dim(goi_df_brain)[1]==0) {
+      print("This gene is not present in the dataset")
+      rm(goi_df_placenta)
+      rm(goi_df_brain)
+    }else if (dim(goi_df_placenta)[1]==0) {
+      print("This gene is not present in the placenta")
+      rm(goi_df_placenta)
+      goi_df_brain_t <- data.frame(t(goi_df_brain))
+      goi_df_brain_t$SampleID <- rownames(goi_df_brain_t)
+      for (row in rownames(goi_df_brain_t)) {
+        goi_df_brain_t$SampleID[goi_df_brain_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+        
+      }
+      brain_merged <- merge(goi_df_brain_t, metadata, by.x="SampleID", by.y="sampleID")
+      brain_merged <- brain_merged %>%
+        rename(Brain = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      brain_merged$Brain <- as.numeric(brain_merged$Brain)
+      male_brain_data <- subset(brain_merged, Sex == "Male")
+      female_brain_data <- subset(brain_merged, Sex == "Female")
+      malebrainStat <- cor.test(male_brain_data$Maternal_Triglycerides, male_brain_data$Brain)
+      malebrainpval <- round(malebrainStat$p.value,3)
+      malebrainpval <- paste("p=",malebrainpval)
+      malebrainR <- round(malebrainStat$estimate, 2)
+      malebrainR <- as.numeric(malebrainR)
+      malebrainR <- paste("R=", malebrainR)
+      malegraphstat <- as.character(paste(malebrainR, malebrainpval))
+      malebrain_TPM_max = max(male_brain_data$Brain)
+      femalebrainStat <- cor.test(female_brain_data$Maternal_Triglycerides, female_brain_data$Brain)
+      femalebrainpval <- round(femalebrainStat$p.value,3)
+      femalebrainpval <- paste("p=",femalebrainpval)
+      femalebrainR <- round(femalebrainStat$estimate, 2)
+      femalebrainR <- as.numeric(femalebrainR)
+      femalebrainR <- paste("R=", femalebrainR)
+      femalegraphstat <- as.character(paste(femalebrainR, femalebrainpval))
+      femalebrain_TPM_max = max(female_brain_data$Brain)
+      Male_Brain_Corr <- ggplotly(ggplot(male_brain_data, aes(x = Maternal_Triglycerides, y = Brain))+
+                                    geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                                fill = "lightcyan3", alpha=0.5)+
+                                    geom_point(color="turquoise4", alpha=0.5)+
+                                    geom_line(stat="smooth", method="lm",color = "lightcyan4",
+                                              size=.5)+
+                                    ggtitle(label = gene_of_interest)+
+                                    geom_text(x=.8, y=malebrain_TPM_max, aes(label=paste(malebrainR,",",malebrainpval)), size=3)+
+                                    corr_plot_settings)
+      
+      Female_Brain_Corr <- ggplotly(ggplot(female_brain_data, aes(x = Maternal_Triglycerides, y = Brain))+
+                                      geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                                  fill = "mistyrose3", alpha=0.5)+
+                                      geom_point(color="rosybrown3", alpha=0.5)+
+                                      geom_line(stat="smooth", method="lm",color = "rosybrown",
+                                                size=.5)+
+                                      ggtitle(label = gene_of_interest)+
+                                      geom_text(x=1.1, y=femalebrain_TPM_max, aes(label=paste(femalebrainR,",",femalebrainpval)), size=3)+
+                                      corr_plot_settings)
+      splitCorrLayout <- subplot(Female_Brain_Corr, Male_Brain_Corr, titleY=TRUE, titleX = TRUE,
+                                 margin=0.1)
+      
+      annotations = list( 
+        list( 
+          x = 0.2,  
+          y = 1.0, 
+          text = "Female Brain",
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ),  
+        list( 
+          x = 0.8,  
+          y = 1,  
+          text = "Male Brain",  
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ))
+      ggplotly(splitCorrLayout) %>% layout(annotations = annotations)
+    } else if (dim(goi_df_brain)[1]==0) {
+      print("This gene is not present in the brain")
+      rm(goi_df_brain)
+      goi_df_placenta_t <- data.frame(t(goi_df_placenta))
+      goi_df_placenta_t$SampleID <- rownames(goi_df_placenta_t)
+      for (row in rownames(goi_df_placenta_t)) { 
+        goi_df_placenta_t$SampleID[goi_df_placenta_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+        
+      }
+      placenta_merged <- merge(goi_df_placenta_t, metadata, by.x="SampleID", by.y="sampleID")
+      placenta_merged <- placenta_merged %>%
+        rename(Placenta = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      placenta_merged$Placenta <- as.numeric(placenta_merged$Placenta)
+      male_plac_data <- subset(placenta_merged, Sex == "Male")
+      female_plac_data <- subset(placenta_merged, Sex == "Female")
+      malePlacentaStat <- cor.test(male_plac_data$Maternal_Triglycerides, male_plac_data$Placenta)
+      malePlacentapval <- round(malePlacentaStat$p.value,3)
+      malePlacentapval <- paste("p=",malePlacentapval)
+      malePlacentaR <- round(malePlacentaStat$estimate, 2)
+      malePlacentaR <- as.numeric(malePlacentaR)
+      malePlacentaR <- paste("R=", malePlacentaR)
+      malegraphstat <- as.character(paste(malePlacentaR, malePlacentapval))
+      malePlacenta_TPM_max = max(male_plac_data$Placenta)
+      femalePlacentaStat <- cor.test(female_plac_data$Maternal_Triglycerides, female_plac_data$Placenta)
+      femalePlacentapval <- round(femalePlacentaStat$p.value,3)
+      femalePlacentapval <- paste("p=",femalePlacentapval)
+      femalePlacentaR <- round(femalePlacentaStat$estimate, 2)
+      femalePlacentaR <- as.numeric(femalePlacentaR)
+      femalePlacentaR <- paste("R=", femalePlacentaR)
+      femalegraphstat <- as.character(paste(femalePlacentaR, femalePlacentapval))
+      femalePlacenta_TPM_max = max(female_plac_data$Placenta)
+      Male_Plac_Corr <- ggplotly(ggplot(male_plac_data, aes(x = Maternal_Triglycerides, y = Placenta))+
+                                   geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                               fill = "lightcyan3", alpha=0.5)+
+                                   geom_point(color="turquoise4", alpha=0.5)+
+                                   geom_line(stat="smooth", method="lm",color = "lightcyan4",
+                                             size=.5)+
+                                   ggtitle(label = gene_of_interest)+
+                                   geom_text(x=.8, y=malePlacenta_TPM_max, aes(label=paste(malePlacentaR,",",malePlacentapval)), size=3)+
+                                   corr_plot_settings)
+      
+      Female_Plac_Corr <- ggplotly(ggplot(female_plac_data, aes(x = Maternal_Triglycerides, y = Placenta))+
+                                     geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                                 fill = "mistyrose3", alpha=0.5)+
+                                     geom_point(color="rosybrown3", alpha=0.5)+
+                                     geom_line(stat="smooth", method="lm",color = "rosybrown",
+                                               size=.5)+
+                                     ggtitle(label = gene_of_interest)+
+                                     geom_text(x=1.1, y=femalePlacenta_TPM_max, aes(label=paste(femalePlacentaR,",",femalePlacentapval)), size=3)+
+                                     corr_plot_settings)
+      
+      splitCorrLayout <- subplot(Female_Plac_Corr, Male_Plac_Corr, titleY=TRUE, titleX = TRUE,
+                                 margin = .1) 
+      
+      annotations = list( 
+        list( 
+          x = 0.2,  
+          y = 1.0, 
+          text = "Female Placenta",
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ),  
+        list( 
+          x = 0.8,  
+          y = 1,  
+          text = "Male Placenta",  
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ))
+      ggplotly(splitCorrLayout) %>% layout(annotations = annotations)
+    } else {
+      
+      
+      
+      goi_df_brain_t <- data.frame(t(goi_df_brain))
+      goi_df_placenta_t <- data.frame(t(goi_df_placenta))
+      
+      
+      ## rownames(goi_df_brain_t)
+      
+      goi_df_brain_t$SampleID <- rownames(goi_df_brain_t)
+      goi_df_placenta_t$SampleID <- rownames(goi_df_placenta_t)
+      
+      
+      
+      for (row in rownames(goi_df_brain_t)) {
+        goi_df_brain_t$SampleID[goi_df_brain_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+        
+      }
+      
+      
+      for (row in rownames(goi_df_placenta_t)) { 
+        goi_df_placenta_t$SampleID[goi_df_placenta_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+        
+      }
+      
+      
+      
+      brain_merged <- merge(goi_df_brain_t, metadata, by.x="SampleID", by.y="sampleID")
+      brain_merged <- brain_merged %>%
+        rename(Brain = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      placenta_merged <- merge(goi_df_placenta_t, metadata, by.x="SampleID", by.y="sampleID")
+      placenta_merged <- placenta_merged %>%
+        rename(Placenta = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      brain_merged$Brain <- as.numeric(brain_merged$Brain)
+      placenta_merged$Placenta <- as.numeric(placenta_merged$Placenta)
+      
+      male_brain_data <- subset(brain_merged, Sex == "Male")
+      male_plac_data <- subset(placenta_merged, Sex == "Male")
+      female_brain_data <- subset(brain_merged, Sex == "Female")
+      female_plac_data <- subset(placenta_merged, Sex == "Female")
+      
+      malebrainStat <- cor.test(male_brain_data$Maternal_Triglycerides, male_brain_data$Brain)
+      malebrainpval <- round(malebrainStat$p.value,3)
+      malebrainpval <- paste("p=",malebrainpval)
+      malebrainR <- round(malebrainStat$estimate, 2)
+      malebrainR <- as.numeric(malebrainR)
+      malebrainR <- paste("R=", malebrainR)
+      malegraphstat <- as.character(paste(malebrainR, malebrainpval))
+      malebrain_TPM_max = max(male_brain_data$Brain)
+      
+      femalebrainStat <- cor.test(female_brain_data$Maternal_Triglycerides, female_brain_data$Brain)
+      femalebrainpval <- round(femalebrainStat$p.value,3)
+      femalebrainpval <- paste("p=",femalebrainpval)
+      femalebrainR <- round(femalebrainStat$estimate, 2)
+      femalebrainR <- as.numeric(femalebrainR)
+      femalebrainR <- paste("R=", femalebrainR)
+      femalegraphstat <- as.character(paste(femalebrainR, femalebrainpval))
+      femalebrain_TPM_max = max(female_brain_data$Brain)
+      
+      malePlacentaStat <- cor.test(male_plac_data$Maternal_Triglycerides, male_plac_data$Placenta)
+      malePlacentapval <- round(malePlacentaStat$p.value,3)
+      malePlacentapval <- paste("p=",malePlacentapval)
+      malePlacentaR <- round(malePlacentaStat$estimate, 2)
+      malePlacentaR <- as.numeric(malePlacentaR)
+      malePlacentaR <- paste("R=", malePlacentaR)
+      malegraphstat <- as.character(paste(malePlacentaR, malePlacentapval))
+      malePlacenta_TPM_max = max(male_plac_data$Placenta)
+      
+      femalePlacentaStat <- cor.test(female_plac_data$Maternal_Triglycerides, female_plac_data$Placenta)
+      femalePlacentapval <- round(femalePlacentaStat$p.value,3)
+      femalePlacentapval <- paste("p=",femalePlacentapval)
+      femalePlacentaR <- round(femalePlacentaStat$estimate, 2)
+      femalePlacentaR <- as.numeric(femalePlacentaR)
+      femalePlacentaR <- paste("R=", femalePlacentaR)
+      femalegraphstat <- as.character(paste(femalePlacentaR, femalePlacentapval))
+      femalePlacenta_TPM_max = max(female_plac_data$Placenta)
+      
+      
+      Male_Brain_Corr <- ggplotly(ggplot(male_brain_data, aes(x = Maternal_Triglycerides, y = Brain))+
+                                    geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                                fill = "lightcyan3", alpha=0.5)+
+                                    geom_point(color="turquoise4", alpha=0.5)+
+                                    geom_line(stat="smooth", method="lm",color = "lightcyan4",
+                                              size=.5)+
+                                    ggtitle(label = gene_of_interest)+
+                                    geom_text(x=.8, y=malebrain_TPM_max, aes(label=paste(malebrainR,",",malebrainpval)), size=3)+
+                                    corr_plot_settings)
+      
+      Female_Brain_Corr <- ggplotly(ggplot(female_brain_data, aes(x = Maternal_Triglycerides, y = Brain))+
+                                      geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                                  fill = "mistyrose3", alpha=0.5)+
+                                      geom_point(color="rosybrown3", alpha=0.5)+
+                                      geom_line(stat="smooth", method="lm",color = "rosybrown",
+                                                size=.5)+
+                                      geom_text(x=1.1, y=femalebrain_TPM_max, aes(label=paste(femalebrainR,",",femalebrainpval)), size=3)+
+                                      corr_plot_settings)
+      
+      Male_Plac_Corr <- ggplotly(ggplot(male_plac_data, aes(x = Maternal_Triglycerides, y = Placenta))+
+                                   geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                               fill = "lightcyan3", alpha=0.5)+
+                                   geom_point(color="turquoise4", alpha=0.5)+
+                                   geom_line(stat="smooth", method="lm",color = "lightcyan4",
+                                             size=.5)+
+                                   geom_text(x=.8, y=malePlacenta_TPM_max, aes(label=paste(malePlacentaR,",",malePlacentapval)), size=3)+
+                                   corr_plot_settings)
+      
+      Female_Plac_Corr <- ggplotly(ggplot(female_plac_data, aes(x = Maternal_Triglycerides, y = Placenta))+
+                                     geom_ribbon(stat="smooth", method = "lm", se=TRUE,
+                                                 fill = "mistyrose3", alpha=0.5)+
+                                     geom_point(color="rosybrown3", alpha=0.5)+
+                                     geom_line(stat="smooth", method="lm",color = "rosybrown",
+                                               size=.5)+
+                                     geom_text(x=1.1, y=femalePlacenta_TPM_max, aes(label=paste(femalePlacentaR,",",femalePlacentapval)), size=3)+
+                                     corr_plot_settings)
+      brplot <- ggplotly(ggplot())
+      
+      
+      
+      splitCorrLayout <- subplot(Female_Plac_Corr, Male_Plac_Corr, brplot, brplot, Female_Brain_Corr, Male_Brain_Corr, nrows=3, 
+                                 titleY=TRUE, titleX = TRUE, margin=0.04, heights = c(0.45, 0.1, 0.45))
+      
+      annotations = list( 
+        list( 
+          x = 0.2,  
+          y = 1.0, 
+          text = "Female Placenta",
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ),  
+        list( 
+          x = 0.75,  
+          y = 1,  
+          text = "Male Placenta",  
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ),
+        list( 
+          x = 0.2,  
+          y = 0.4,  
+          text = "Female Brain",  
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",  
+          showarrow = FALSE 
+        ),
+        list( 
+          x = 0.75,  
+          y = 0.4,
+          text = "Male Brain",  
+          xref = "paper",  
+          yref = "paper",  
+          xanchor = "center",  
+          yanchor = "bottom",
+          showarrow = FALSE 
+        ))
+      
+      
+      ggplotly(splitCorrLayout) %>% layout(annotations = annotations, autosize = F, width = 800, height = 750)
+    }
+  })
+    
+## Next is sex differences plot  
+  
+  output$sex_diff_plot <- renderPlotly({
+    
+    
+    gene_of_interest <- input$entered_genes
+    
+    
+    goi_df_brain <- brain_tpm_df[brain_tpm_df$hgnc_symbol == gene_of_interest, ]
+    goi_df_placenta <- placenta_tpm_df[placenta_tpm_df$hgnc_symbol == gene_of_interest, ]
+    
+    if (dim(goi_df_placenta)[1]==0 && dim(goi_df_brain)[1]==0) {
+      print("This gene is not present in the dataset")
+      rm(goi_df_placenta)
+      rm(goi_df_brain)
+    }else if (dim(goi_df_placenta)[1]==0) {
+      print("This gene is not present in the placenta")
+      rm(goi_df_placenta)
+      goi_df_brain_t <- data.frame(t(goi_df_brain))
+      goi_df_brain_t$SampleID <- rownames(goi_df_brain_t)
+      for (row in rownames(goi_df_brain_t)) {
+        goi_df_brain_t$SampleID[goi_df_brain_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+      }
+      brain_merged <- merge(goi_df_brain_t, metadata, by.x="SampleID", by.y="sampleID")
+      brain_merged <- brain_merged %>%
+        rename(Brain = starts_with("X"), 
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      brain_merged$Brain <- as.numeric(brain_merged$Brain)
+      brain_merged_grouped <- brain_merged %>%
+        group_by(Sex) %>%
+        summarise(sem_brain = sem(Brain), Brain = mean(Brain))
+      brain_pval <- 
+        t.test(brain_merged$Brain[brain_merged$Sex == "Male"],
+               brain_merged$Brain[brain_merged$Sex == "Female"])
+      brain_pval_graph <- round(brain_pval$p.value, 4)
+      brain_pval_graph <- paste("p=",brain_pval_graph)
+      b_max <- max(brain_merged$Brain)
+      b_min <- min(brain_merged$Brain)
+      brainBox <- ggplotly(ggplot(brain_merged, aes(x = Sex, y = Brain, fill = Sex))+
+                             geom_boxplot(outlier.color = NA, outlier.size = 0, outlier.shape = NA)+
+                             coord_cartesian(ylim = c(b_min, b_max))+
+                             scale_fill_manual(values = c("mistyrose3", "lightcyan3"))+
+                             geom_jitter(data = brain_merged, width = 0.1, alpha = 0.5)+
+                             ggtitle(paste(label = gene_of_interest,"<br>Brain"))+
+                             geom_text(aes(x=1.5, y=b_max, label=as.character(brain_pval_graph)), size=3)+
+                             box_plot_theme)
+      brainBox$x$data[[1]]$marker$opacity = 0 
+      brainBox$x$data[[2]]$marker$opacity = 0
+      ggplotly(brainBox) %>% layout(yaxis = yy, width = 500)
+    } else if (dim(goi_df_brain)[1]==0) {
+      print("This gene is not present in the brain")
+      rm(goi_df_brain)
+      goi_df_placenta_t <- data.frame(t(goi_df_placenta))
+      goi_df_placenta_t$SampleID <- rownames(goi_df_placenta_t)
+      for (row in rownames(goi_df_placenta_t)) {
+        goi_df_placenta_t$SampleID[goi_df_placenta_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+        
+      }
+      placenta_merged <- merge(goi_df_placenta_t, metadata, by.x="SampleID", by.y="sampleID")
+      placenta_merged <- placenta_merged %>%
+        rename(Placenta = starts_with("X"), 
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      placenta_merged$Placenta <- as.numeric(placenta_merged$Placenta)
+      placenta_merged_grouped <- placenta_merged %>%
+        group_by(Sex) %>%
+        summarise(sem_placenta = sem(Placenta), Placenta = mean(Placenta))
+      placenta_pval <- 
+        t.test(placenta_merged$Placenta[placenta_merged$Sex == "Male"],
+               placenta_merged$Placenta[placenta_merged$Sex == "Female"])
+      placenta_pval_graph <- round(placenta_pval$p.value, 4)
+      placenta_pval_graph <- paste("p=",placenta_pval_graph)
+      p_max <- max(placenta_merged$Placenta)
+      p_min <- min(placenta_merged$Placenta)
+      placentaBox <- ggplotly(ggplot(placenta_merged, aes(x = Sex, y = Placenta, fill = Sex))+
+                                geom_boxplot(outlier.shape = NA, outlier.size = NA, outlier.color = NA)+
+                                coord_cartesian(ylim = c(p_min, p_max))+
+                                scale_fill_manual(values = c("mistyrose3", "lightcyan3"))+
+                                geom_jitter(data = placenta_merged, width = 0.1, alpha = 0.5)+
+                                ggtitle(paste(label = gene_of_interest,"<br>Placenta"))+
+                                geom_text(aes(x=1.5, y=p_max, label=as.character(placenta_pval_graph)), size=3)+
+                                box_plot_theme)
+      placentaBox$x$data[[1]]$marker$opacity = 0 
+      placentaBox$x$data[[2]]$marker$opacity = 0
+      ggplotly(placentaBox) %>% layout(yaxis = yy, width = 500)
+    } else {
+      
+      goi_df_brain_t <- data.frame(t(goi_df_brain))
+      goi_df_placenta_t <- data.frame(t(goi_df_placenta))
+      
+      ## this returns a list not a dataframe. we needed it to be a dataframe so we tell it to be a dataframe
+      ## then we need to make the row names into an actual row b/c they behave different.
+      ## to check, do 
+      
+      ## rownames(goi_df_brain_t)
+      
+      goi_df_brain_t$SampleID <- rownames(goi_df_brain_t)
+      goi_df_placenta_t$SampleID <- rownames(goi_df_placenta_t)
+      
+      
+      
+      for (row in rownames(goi_df_brain_t)) {
+        goi_df_brain_t$SampleID[goi_df_brain_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+      }
+      
+      
+      for (row in rownames(goi_df_placenta_t)) { 
+        goi_df_placenta_t$SampleID[goi_df_placenta_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+      }
+      
+      
+      ## create a new dataframe w/the metadata plus a column by merging metadata w/TPM data 
+      
+      brain_merged <- merge(goi_df_brain_t, metadata, by.x="SampleID", by.y="sampleID")
+      brain_merged <- brain_merged %>%
+        rename(Brain = starts_with("X"))
+      
+      both_merged <- merge(goi_df_placenta_t, brain_merged, by.x = "SampleID", by.y = "SampleID")
+      both_merged <- both_merged %>%
+        rename(Placenta = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      brain_merged <- brain_merged %>%
+        rename(Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      placenta_merged <- merge(goi_df_placenta_t, metadata, by.x="SampleID", by.y="sampleID")
+      placenta_merged <- placenta_merged %>%
+        rename(Placenta = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      brain_merged$Brain <- as.numeric(brain_merged$Brain)
+      placenta_merged$Placenta <- as.numeric(placenta_merged$Placenta)
+      
+      brain_merged_grouped <- brain_merged %>%
+        group_by(Sex) %>%
+        summarise(sem_brain = sem(Brain), Brain = mean(Brain))
+      
+      placenta_merged_grouped <- placenta_merged %>%
+        group_by(Sex) %>%
+        summarise(sem_placenta = sem(Placenta), Placenta = mean(Placenta))
+      
+      brain_pval <- 
+        t.test(brain_merged$Brain[brain_merged$Sex == "Male"],
+               brain_merged$Brain[brain_merged$Sex == "Female"])
+      brain_pval_graph <- round(brain_pval$p.value, 4)
+      brain_pval_graph <- paste("p=",brain_pval_graph)
+      
+      placenta_pval <- 
+        t.test(placenta_merged$Placenta[placenta_merged$Sex == "Male"],
+               placenta_merged$Placenta[placenta_merged$Sex == "Female"])
+      placenta_pval_graph <- round(placenta_pval$p.value,4)
+      placenta_pval_graph <- paste("p=",placenta_pval_graph)
+      
+      
+      b_max <- max(brain_merged$Brain)
+      p_max <- max(placenta_merged$Placenta)
+      combined <- data.frame(b_max, p_max)
+      y_max <- max(combined)
+      
+      
+      b_min <- min(brain_merged$Brain)
+      p_min <- min(placenta_merged$Placenta)
+      combined_min <- data.frame(b_min, p_min)
+      y_min <- min(combined_min)
+      
+      
+      brainBox <- ggplotly(ggplot(brain_merged, aes(x = Sex, y = Brain, fill = Sex))+
+                             geom_boxplot(outlier.color = NA, outlier.size = 0, outlier.shape = NA)+
+                             coord_cartesian(ylim = c(y_min, y_max))+
+                             scale_fill_manual(values = c("mistyrose3", "lightcyan3"))+
+                             geom_jitter(data = brain_merged, width = 0.1, alpha = 0.5)+
+                             ggtitle(label = gene_of_interest)+
+                             geom_text(aes(x=1.5, y=y_max, label=as.character(brain_pval_graph)), size=3)+
+                             box_plot_theme)
+      
+      placentaBox <- ggplotly(ggplot(placenta_merged, aes(x = Sex, y = Placenta, fill = Sex))+
+                                geom_boxplot(outlier.color = NA, outlier.size = 0, outlier.shape = NA)+
+                                coord_cartesian(ylim = c(y_min, y_max))+
+                                scale_fill_manual(values = c("mistyrose3", "lightcyan3"))+
+                                geom_jitter(data = placenta_merged, width = 0.1, alpha = 0.5)+
+                                geom_text(aes(x=1.5, y=y_max, label=as.character(placenta_pval_graph)), size=3)+
+                                box_plot_theme)
+      
+      ## setting outlier points to zero
+      
+      brainBox$x$data[[1]]$marker$opacity = 0 
+      placentaBox$x$data[[1]]$marker$opacity = 0 
+      brainBox$x$data[[2]]$marker$opacity = 0 
+      placentaBox$x$data[[2]]$marker$opacity = 0 
+      
+      
+      boxLayout <- subplot(style(placentaBox, showlegend = F), brainBox,
+                           margin = 0.04)
+      
+      annotations = list(
+        list(
+          x=0.2, 
+          y=1, 
+          text = "Placenta",
+          xref = "paper",
+          yref = "paper",
+          xanchor = "center",
+          yanchor = "bottom",
+          showarrow = FALSE
+        ),
+        list(
+          x=0.8,
+          y=1,
+          text = "Brain",
+          xref = "paper",
+          yref = "paper",
+          xanchor = "center",
+          yanchor = "bottom",
+          showarrow = FALSE
+        ))
+      
+      
+      ggplotly(boxLayout) %>% layout(yaxis = yy, annotations = annotations)
+      }
+  })
+  
+  output$data_table_download <- downloadHandler(
+    
+    filename = function() {paste('data_output', '_', list(input$entered_genes), '.csv', sep = '')},
+    content = function(file) {
+      
+      
+      
+      gene_of_interest <- input$entered_genes
+      
+      goi_df_brain <- brain_tpm_df[brain_tpm_df$hgnc_symbol == gene_of_interest, ]
+      goi_df_placenta <- placenta_tpm_df[placenta_tpm_df$hgnc_symbol == gene_of_interest, ]
+      goi_df_brain_t <- data.frame(t(goi_df_brain))
+      goi_df_placenta_t <- data.frame(t(goi_df_placenta))
+      goi_df_brain_t$SampleID <- rownames(goi_df_brain_t)
+      goi_df_placenta_t$SampleID <- rownames(goi_df_placenta_t)
+      for (row in rownames(goi_df_brain_t)) {
+        goi_df_brain_t$SampleID[goi_df_brain_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+      }
+      for (row in rownames(goi_df_placenta_t)) { 
+        goi_df_placenta_t$SampleID[goi_df_placenta_t$SampleID == row] <- str_split(str_split(row, '_')[[1]][1], 'X')[[1]][2]
+      }
+      brain_merged <- merge(goi_df_brain_t, metadata, by.x="SampleID", by.y="sampleID")
+      brain_merged <- brain_merged %>%
+        rename(Brain = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      placenta_merged <- merge(goi_df_placenta_t, metadata, by.x="SampleID", by.y="sampleID")
+      placenta_merged <- placenta_merged %>%
+        rename(Placenta = starts_with("X"),
+               Sex = sex,
+               Age = age,
+               Maternal_Triglycerides = trig,
+               Brain_5HT = brain_5ht,
+               Placenta_5HT = plac_5ht)
+      
+      
+      both_merged <- merge(goi_df_placenta_t, brain_merged, by.x = "SampleID", by.y = "SampleID")
+      both_merged <- both_merged %>%
+        rename(Placenta = starts_with("X"))
+      
+      merged <- both_merged[order(both_merged$Sex),]
+      merged_final <- subset(merged, select=-c(exclude, Notes))
+      merged_final
+      
+      write.csv(merged_final, file)
+      
+    })
+  
+  
+  
+  
+  
+  
+  
+  
+}
