@@ -16,19 +16,57 @@ server <- function (input, output, session) {
   
   output$landing_text <- renderUI ({
     
-    x <- list(tags$h1("Welcome to Fetal-Brain-seq!", style = 'text-align: center'),
-              img(src="test.gif", height = '500px', width='600px', style = "display: block; margin-left: auto; margin-right: auto;"),
-              tags$h1(""),
-              tags$h5("This website contains interactive visualizations and statistics of bulk RNA sequencing data
-              from matched human fetal brain and placental tissue. The Correlation Plots tab will show you if your gene of 
-              interest is correlated with maternal triglyceride accumulation, a proxy for dietary fat intake. The Sex Differences
-              tab will show you if your gene of interest is differentially expressed by sex." ,style = 'text-align: center'),
-              tags$hr(),
+    x <- list(tags$h2("Welcome to Human Fetal RNA Seq!", style = 'text-align: center'),
+              tags$h5("This website contains interactive visualizations and statistics of our bulk RNA sequencing data from
+                      matched human fetal brain and placenta tissue (72-82 days post conception).",
+                      style='text-align:center'),
+              img(src="microglia.gif", height = '400px', width='505px', style = "display: block; margin-left: auto; margin-right: auto;"),
+              tags$h5(""),
+              fluidRow(column(width = 6,tags$br(), img(src="FetalTissue.png", height='100%', width='100%')),
+              column(width = 6, tags$br(), tags$h5("Under the", tags$strong("Plots"), "menu on the sidebar:"), tags$h5("The", tags$strong("Correlation Plots"), "tab will show you if your gene of interest is correlated with maternal
+              triglyceride accumulation (a proxy for dietary fat intake)."),
+              tags$h5(""),
+              tags$h5("The", tags$strong("Sex Differences"), "tab will show you if your gene of interest is differentially
+                      expressed by sex in either brain or placenta."),
+              tags$h5(""),
+              tags$h5("The", tags$strong("Data Table"), "tab will provide the TPM values for your gene of interest alongside available data (sex,
+              5-HT levels, maternal triglyceride accumulation) for each tissue."))),
+              tags$h5(),
               tags$h3("",
-                      "Read the paper",
+                      "Check out the preprint",
                       tags$a(href="https://www.biorxiv.org/content/10.1101/2021.11.12.468408v2", 
-                             "here"), style = 'text-align: center'))
+                             "here!"), style = 'text-align: center')
+              )
     tagList(x)
+  })
+  
+  output$background_text <- renderUI({
+    aa <- list(tags$h1(""),
+               tags$h5("The",
+                       tags$a(href="http://bilbolab.com/", "Bilbo Lab"),
+                       "is dedicated to understanding sex differences in developmental neuroimmune interactions", style = 'text-align: center'),
+               tags$h3(""),
+               tags$h5(
+      HTML(paste("Recently, we uncovered that maternal high fat diet leads to endotoxin accumulation
+              in fetal tissue in mice, resulting in increased Tlr4 signaling in fetal tissues.", 
+                 tags$span(style="color:#05575D", " In male offspring"),"this leads to increased Tlr4-dependent
+                           microglial phagocytosis of serotonin (5-HT) neurons in the fetal dorsal raphe nucleus (DRN), 
+                           persistently decreased 5-HT in adult offspring brains, and diminished reward-seeking behavior.
+                           Microglia in", tags$span(style="color:purple", "female offspring"), "show signs of increased
+                           phagocytic activity, but the target CNS cell population is unknown.")), style='text-align:justify'),
+      img(src="humanVSmouse.png", height = '100px', width='465px', style = "display: block; margin-left: auto; margin-right: auto;"),
+      tags$h5(
+        HTML(paste("We were interested in determing to what degree these findings could be translated to human populations, 
+              and we obtained matched human fetal brain, placenta, and decidua (maternal placenta) from elective terminations
+              matching the developmental timeline we followed in mice (embryonic days 14-16 in mice is roughly equivalent
+              to 63-81 days post conception in humans). Given that no clinical data were available from these tissues, we assessed
+              decidual triglyceride accumulation as a proxy for maternal dietary fat intake, and validated this method in our mouse model.
+              We then correlated fetal tissue 5-HT levels with maternal triglyceride accumulation and found that fetal brain 5-HT was
+              significantly negatively correlated with maternal triglyceride accumulation", tags$span(style="color:#05575D", "in males only."),
+                   "We then performed bulk RNA-
+              sequencing on the matched fetal brain and placenta tissues.")), style='text-align:justify'),
+      img(src="summary.png", height="290px", width="620px",style = "display: block; margin-left: auto; margin-right: auto;"))
+    tagList(aa)
   })
   
   
@@ -672,7 +710,7 @@ server <- function (input, output, session) {
       placentaBox$x$data[[2]]$marker$opacity = 0 
       
       
-      boxLayout <- subplot(style(placentaBox, showlegend = F), brainBox,
+      boxLayout <- subplot(style(placentaBox, showlegend = FALSE), brainBox,
                            margin = 0.04)
       
       annotations = list(
