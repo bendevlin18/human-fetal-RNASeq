@@ -61,7 +61,7 @@ server <- function (input, output, session) {
       ## was text wrapping which is weird. also can't get it centered - tried lots of things (margin: auto,etc)
       
       div(class ="col-sm-8", 
-          img(src="humanVSmouse.png", height = '100px', width='465px')),
+          img(src="humanVSmouse.png", height = '10px', width='46px')),
       
       
       tags$br(),
