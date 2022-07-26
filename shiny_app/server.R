@@ -41,7 +41,8 @@ server <- function (input, output, session) {
   })
   
   output$background_text <- renderUI({
-    aa <- list(tags$h1(""),
+    aa <- list(tags$h1("The Backstory", style='text-align: center'),
+               tags$h4(),
                tags$h5("The",
                        tags$a(href="http://bilbolab.com/", "Bilbo Lab"),
                        "is dedicated to understanding sex differences in developmental neuroimmune interactions", style = 'text-align: center'),
@@ -54,7 +55,21 @@ server <- function (input, output, session) {
                            persistently decreased 5-HT in adult offspring brains, and diminished reward-seeking behavior.
                            Microglia in", tags$span(style="color:purple", "female offspring"), "show signs of increased
                            phagocytic activity, but the target CNS cell population is unknown.")), style='text-align:justify'),
-      img(src="humanVSmouse.png", height = '100px', width='465px', style = "display: block; margin-left: auto; margin-right: auto;"),
+      
+      
+      ##alexis added this 7/22 to try and adjust aspect ratios on mobile! needs testing. had to add a bunch of breaks after because otherwise it 
+      ## was text wrapping which is weird. also can't get it centered - tried lots of things (margin: auto,etc)
+      
+      div(class ="col-sm-8", 
+          img(src="humanVSmouse.png", height = '100px', width='465px')),
+      
+      
+      tags$br(),
+      tags$br(),
+      tags$br(),
+      tags$br(),
+      tags$br(),
+      tags$br(),
       tags$h5(
         HTML(paste("We were interested in determing to what degree these findings could be translated to human populations, 
               and we obtained matched human fetal brain, placenta, and decidua (maternal placenta) from elective terminations
@@ -450,8 +465,8 @@ server <- function (input, output, session) {
       
       
       
-      splitCorrLayout <- subplot(Female_Plac_Corr, Male_Plac_Corr, brplot, brplot, Female_Brain_Corr, Male_Brain_Corr, nrows=3, 
-                                 titleY=TRUE, titleX = TRUE, margin=0.04, heights = c(0.45, 0.1, 0.45))
+      splitCorrLayout <- subplot(Female_Plac_Corr, brplot, Male_Plac_Corr, brplot, brplot, brplot, Female_Brain_Corr, brplot, Male_Brain_Corr, nrows=3, 
+                                 titleY=TRUE, titleX = TRUE, margin=0.04, heights = c(0.45, 0.1, 0.45), widths = c(0.45, 0.1, 0.45))
       
       annotations = list( 
         list( 
@@ -709,8 +724,10 @@ server <- function (input, output, session) {
       brainBox$x$data[[2]]$marker$opacity = 0 
       placentaBox$x$data[[2]]$marker$opacity = 0 
       
+      brplot2 <- ggplotly(ggplot())
       
-      boxLayout <- subplot(style(placentaBox, showlegend = FALSE), brainBox,
+      
+      boxLayout <- subplot(style(placentaBox, showlegend = FALSE), brplot2, brainBox, nrows=1, widths = c(0.45, 0.1, 0.45),
                            margin = 0.04)
       
       annotations = list(
