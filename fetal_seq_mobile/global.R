@@ -28,8 +28,8 @@ library(shinyMobile)
 
 
 ###### TISSUE TPM GENE MATRICES ######
-##brain_df <- read.csv('brain_tpm_w_exclusions.csv')
-##placenta_df <- read.csv('placenta_tpm_w_exclusions.csv')
+#brain_df <- read.csv('brain_tpm_w_exclusions.csv')
+#placenta_df <- read.csv('placenta_tpm_w_exclusions.csv')
 
 brain_tpm_df <- read.csv('brain_tpm_w_exclusions.csv')
 placenta_tpm_df <- read.csv('placenta_tpm_w_exclusions.csv')
@@ -38,28 +38,27 @@ brain_genes <- brain_tpm_df$hgnc_symbol
 placenta_genes <- placenta_tpm_df$hgnc_symbol
 choice_genes <- unique(list(brain_tpm_df$hgnc_symbol, placenta_tpm_df$hgnc_symbol))
 
-##z <- t(brain_df)
+z <- t(brain_tpm_df)
 ## batch through and clean colnames for the brain
-##for (cols in colnames(brain_df)) {
+for (cols in colnames(brain_tpm_df)) {
   
-##  if (grepl('tpm', cols, fixed=TRUE)) {
+  if (grepl('tpm', cols, fixed=TRUE)) {
+    colnames(brain_tpm_df)[colnames(brain_tpm_df) == cols] <- str_split(str_split(cols, 'X')[[1]][2], '_tpm')[[1]][1]
     
-##    colnames(brain_df)[colnames(brain_df) == cols] <- str_split(str_split(cols, 'X')[[1]][2], '_tpm')[[1]][1]
-    
-##
-##}
+  }
+}
 
 
-##z <- t(placenta_df)
+z <- t(placenta_tpm_df)
 ## batch through and clean colnames for the placenta
-##for (cols in colnames(placenta_df)) {
+for (cols in colnames(placenta_tpm_df)) {
   
-##  if (grepl('tpm', cols, fixed=TRUE)) {
+  if (grepl('tpm', cols, fixed=TRUE)) {
     
-##    colnames(placenta_df)[colnames(placenta_df) == cols] <- str_split(str_split(cols, 'X')[[1]][2], '_tpm')[[1]][1]
+    colnames(placenta_tpm_df)[colnames(placenta_tpm_df) == cols] <- str_split(str_split(cols, 'X')[[1]][2], '_tpm')[[1]][1]
     
-##  }
-##}
+  }
+}
 
 
 
