@@ -483,6 +483,7 @@ server <- function (input, output, session) {
     
     
     gene_of_interest <- input$entered_genes
+    print(gene_of_interest)
     
     
     goi_df_brain <- brain_tpm_df[brain_tpm_df$hgnc_symbol == gene_of_interest, ]
