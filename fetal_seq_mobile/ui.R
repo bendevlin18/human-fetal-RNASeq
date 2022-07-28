@@ -30,13 +30,13 @@ ui <- f7Page(title="Human Fetal-Seq Mobile",
                               htmlOutput('background_text'))),
                  f7Tab(tabName="Correlation Plots", active=TRUE, icon=f7Icon('layers'),
                        column(width=4,
-                              withSpinner(plotlyOutput('plot1')))),
+                              withSpinner(plotlyOutput('plot1z')))),
                  f7Tab(tabName="Sex Differences", active=TRUE, icon=f7Icon('graph_square', lib='ios'),
                        column(width=4,
-                              withSpinner(plotlyOutput('sex_diff_plot')))),
+                              withSpinner(plotlyOutput('sex_diff_plotz')))),
                  f7Tab(tabName="Data Table", active=TRUE, icon=f7Icon('layers'),
                        column(width=4,
-                              withSpinner(plotlyOutput('table1'))))
+                              withSpinner(plotlyOutput('table1z'))))
                        
                )
                )
