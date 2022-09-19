@@ -75,7 +75,7 @@ server <- function (input, output, session) {
   })
   
   
-  output$table1 <- renderDT(options = list(pageLength = 34),{
+  output$table1 <- renderDT(options = list(pageLength = 35),{
     
     gene_of_interest <- input$entered_genes
     
@@ -110,13 +110,13 @@ server <- function (input, output, session) {
              Placenta_5HT = plac_5ht)
     
     
-    both_merged <- merge(goi_df_placenta_t, brain_merged, by.x = "SampleID", by.y = "SampleID")
+    both_merged <- merge(placenta_merged, goi_df_brain_t, by.x = "SampleID", by.y = "SampleID", all.x = TRUE, all.y = TRUE)
     both_merged <- both_merged %>%
-      rename(Placenta = starts_with("X"))
+      rename(Brain = starts_with("X"))
     
     merged <- both_merged[order(both_merged$Sex),]
     merged_final <- subset(merged, select=-c(exclude, Notes))
-   merged_final
+    merged_final
   })
   
   

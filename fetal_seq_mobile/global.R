@@ -28,11 +28,8 @@ library(shinyMobile)
 
 
 ###### TISSUE TPM GENE MATRICES ######
-#brain_df <- read.csv('brain_tpm_w_exclusions.csv')
-#placenta_df <- read.csv('placenta_tpm_w_exclusions.csv')
-
-brain_tpm_df <- read.csv('brain_tpm_w_exclusions.csv')
-placenta_tpm_df <- read.csv('placenta_tpm_w_exclusions.csv')
+brain_tpm_df <- read.csv('brain_tpm_TRIM_MBX.csv')
+placenta_tpm_df <- read.csv('placenta_tpm_TRIM.csv')
 
 brain_genes <- brain_tpm_df$hgnc_symbol
 placenta_genes <- placenta_tpm_df$hgnc_symbol
