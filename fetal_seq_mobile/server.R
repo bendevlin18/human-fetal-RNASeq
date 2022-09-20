@@ -527,7 +527,7 @@ server <- function (input, output, session) {
                              geom_jitter(data = brain_merged, width = 0.1, alpha = 0.5)+
                              ggtitle(paste(label = gene_of_interest,"<br>Brain"))+
                              geom_text(aes(x=1.5, y=b_max, label=as.character(brain_pval_graph)), size=3)+
-                             box_plot_theme1)
+                             box_plot_theme)
       brainBox$x$data[[1]]$marker$opacity = 0 
       brainBox$x$data[[2]]$marker$opacity = 0
       ggplotly(brainBox) %>% layout(yaxis = yy, width = 300)
@@ -566,7 +566,7 @@ server <- function (input, output, session) {
                                 geom_jitter(data = placenta_merged, width = 0.1, alpha = 0.5)+
                                 ggtitle(paste(label = gene_of_interest,"<br>Placenta"))+
                                 geom_text(aes(x=1.5, y=p_max, label=as.character(placenta_pval_graph)), size=3)+
-                                box_plot_theme1)
+                                box_plot_theme)
       placentaBox$x$data[[1]]$marker$opacity = 0 
       placentaBox$x$data[[2]]$marker$opacity = 0
       ggplotly(placentaBox) %>% layout(yaxis = yy, width = 300)
@@ -678,7 +678,7 @@ server <- function (input, output, session) {
                                 scale_fill_manual(values = c("mistyrose3", "lightcyan3"))+
                                 geom_jitter(data = placenta_merged, width = 0.1, alpha = 0.5)+
                                 geom_text(aes(x=1.5, y=y_max, label=as.character(placenta_pval_graph)), size=3)+
-                                box_plot_theme)
+                                box_plot_theme1)
       
       ## setting outlier points to zero
       
