@@ -45,7 +45,7 @@ server <- function (input, output, session) {
     aa <- list(tags$h1("The Backstory", style='text-align: center'),
                tags$h4(),
                tags$h5("The",
-                       tags$a(href="http://bilbolab.com/", "Bilbo Lab"),
+                       tags$a(href="http://bilbolab.com/", target = '_blank', "Bilbo Lab"),
                        "is dedicated to understanding sex differences in developmental neuroimmune interactions", style = 'text-align: center'),
                tags$h3(""),
                tags$h5(
@@ -61,7 +61,7 @@ server <- function (input, output, session) {
       
       tags$br(),
       tags$h5(
-        HTML(paste("We were interested in determing to what degree these findings could be translated to human populations, 
+        HTML(paste("We were interested in determining to what degree these findings could be translated to human populations, 
               and we obtained matched human fetal brain, placenta, and decidua (maternal placenta) from elective terminations
               matching the developmental timeline we followed in mice (embryonic days 14-16 in mice is roughly equivalent
               to 63-81 days post conception in humans). Given that no clinical data were available from these tissues, we assessed
@@ -797,7 +797,7 @@ server <- function (input, output, session) {
                tags$a('staci.bilbo@duke.edu'),
                tags$a(
                  href = 'https://twitter.com/staci_bilbo', target = '_blank',
-                 tags$img(src="twitter.svg", title="Twitter", width="20", height="20"))),
+                 tags$img(src="twitter.svg", title="Twitter", width="25", height="25"))),
         column(width = 4, 
                tags$img(src="alexis.jpg", title="Staci Image", width="225", height="231"),
                tags$p('Alexis Ceasrine, Ph.D'),
@@ -805,7 +805,7 @@ server <- function (input, output, session) {
                tags$a('alexis.ceasrine@duke.edu'),
                tags$a(
                  href = 'https://twitter.com/aceasrine', target = '_blank',
-                 tags$img(src="twitter.svg", title="Twitter", width="20", height="20"))),
+                 tags$img(src="twitter.svg", title="Twitter", width="25", height="25"))),
         column(width = 4, 
                tags$img(src="ben.png", title="Ben Image", width="225", height="225"),
                tags$p('Ben Devlin'),
@@ -813,14 +813,7 @@ server <- function (input, output, session) {
                tags$a('benjamin.devlin@duke.edu'),
                tags$a(
                  href = 'https://twitter.com/BenDevlin18', target = '_blank',
-                 tags$img(src="twitter.svg", title="Twitter", width="20", height="20")))
-      ),
-      fluidRow(
-        column(width = 12,
-               div(style = "height:50px;background-color: transparent;")),
-        tags$h3('Check out the Bilbo Lab Site!', tags$a('Lab Website',
-                                                        href = 'http://bilbolab.com', target = '_blank'))
-        
+                 tags$img(src="twitter.svg", title="Twitter", width="25", height="25")))
       )
     )
     
