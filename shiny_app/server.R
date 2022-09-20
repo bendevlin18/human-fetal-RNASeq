@@ -810,6 +810,67 @@ server <- function (input, output, session) {
     })
   
   
+  output$website_info_text <- renderUI({
+    
+    z <- list(
+      fluidRow(
+        column(width = 12,
+               div(style = "height:50px;background-color: transparent;"))),
+      tags$h3('All of the code used to analyze the data and produce this website can be found here: ', tags$a(
+        href = 'https://github.com/bendevlin18/human-fetal-RNASeq', target = '_blank',
+        tags$img(src="github-logo.png", title="GitHub", width="25", height="25"))),
+      tags$h3("The raw and preprocessed data has been uploaded to the NCBI's GEO database", tags$a('GSE188872',
+        href = 'https://www.ncbi.nlm.nih.gov/geo/query/acc.cgi?acc=GSE188872', target = '_blank')),
+      tags$h4('If you run into any issues or have any questions about the website or the data contained within, contact us!'),
+      fluidRow(
+        column(width = 12,
+               div(style = "height:50px;background-color: transparent;"))),
+      fluidRow(
+        column(width = 4, 
+               tags$img(src="staci.jpg", title="Staci Image", width="225", height="231"),
+               tags$p('Staci Bilbo, Ph.D'),
+               tags$p('PI'),
+               tags$a('staci.bilbo@duke.edu'),
+               tags$a(
+                 href = 'https://twitter.com/staci_bilbo', target = '_blank',
+                 tags$img(src="twitter.svg", title="Twitter", width="20", height="20"))),
+        column(width = 4, 
+               tags$img(src="alexis.jpg", title="Staci Image", width="225", height="231"),
+               tags$p('Alexis Ceasrine, Ph.D'),
+               tags$p('Postdoc in the Bilbo Lab'),
+               tags$a('alexis.ceasrine@duke.edu'),
+               tags$a(
+                 href = 'https://twitter.com/aceasrine', target = '_blank',
+                 tags$img(src="twitter.svg", title="Twitter", width="20", height="20"))),
+        column(width = 4, 
+               tags$img(src="ben.png", title="Ben Image", width="225", height="225"),
+               tags$p('Ben Devlin'),
+               tags$p('Graduate Student in the Bilbo Lab'),
+               tags$a('benjamin.devlin@duke.edu'),
+               tags$a(
+                 href = 'https://twitter.com/BenDevlin18', target = '_blank',
+                 tags$img(src="twitter.svg", title="Twitter", width="20", height="20")))
+               ),
+      fluidRow(
+        column(width = 12,
+               div(style = "height:50px;background-color: transparent;")),
+      tags$h3('Check out the Bilbo Lab Site!', tags$a('Lab Website',
+        href = 'http://bilbolab.com', target = '_blank'))
+        
+      )
+    )
+    
+    
+    
+    tagList(z)
+    
+    
+    
+  })
+  
+  
+  
+  
   
   
   

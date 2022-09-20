@@ -36,8 +36,10 @@ ui <- f7Page(title="Human Fetal-Seq Mobile",
                               withSpinner(plotlyOutput('sex_diff_plot')))),
                  f7Tab(tabName="Data Table", active=FALSE, icon=f7Icon('layers'),
                        column(width=4,
-                              withSpinner(DTOutput('table1'))))
-                       
+                              withSpinner(DTOutput('table1')))),
+                 f7Tab(tabName = "Site Info", active = FALSE, icon = f7Icon('info_fill'),
+                       column(width = 4,
+                              uiOutput('website_info_text')))
                )
                )
                )

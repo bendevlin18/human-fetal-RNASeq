@@ -19,12 +19,10 @@ ui <-  dashboardPage(skin = 'blue',
                                                  options = list(maxItems = 1, placeholder = 'Example: Cx3cr1')),
                          menuSubItem('Correlation Plots', tabName = 'br_corr_plots', icon = icon('chart-line')),
                          menuSubItem('Sex Differences', tabName = 'sex_diff', icon = icon('chart-bar')),
-                         menuSubItem('Data Table', tabName = 'br_data_table', icon = icon('table'))
+                         menuSubItem('Data Table', tabName = 'br_data_table', icon = icon('table'))),
+                         menuItem('Website Information', tabName = 'web_info', icon = icon('laptop-code'))
                          
                          )
-                        
-                                  )
-                       
                      ),
                      dashboardBody(
                        shinybrowser::detect(),
@@ -40,8 +38,11 @@ ui <-  dashboardPage(skin = 'blue',
                          tabItem('br_corr_plots',
                                  column(width = 12, align='center', withSpinner(plotlyOutput('plot1')))
                                  ),
-                         tabItem('sex_diff', column(width = 12, align='center', withSpinner(plotlyOutput('sex_diff_plot')))
-                         )
+                         tabItem('sex_diff', column(width = 12, align='center', withSpinner(plotlyOutput('sex_diff_plot')))),
+                         tabItem(tabName = 'web_info',
+                                 class = 'text-center',
+                                 uiOutput('website_info_text'),
+                                 tags$style("#website_info_text{color: black;font-size: 15px}"))
                        )))
                      
                      
