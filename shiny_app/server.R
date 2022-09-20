@@ -21,7 +21,7 @@ server <- function (input, output, session) {
                       matched human fetal brain and placenta tissue (72-82 days post conception).",
                       style='text-align:center'),
               tags$h3(
-                tags$a(href = 'http://microglia-seq.vm.duke.edu/microglia-seq/fetal_seq_mobile/', 'MOBILE SITE HERE'), style='text-align: center'),
+                tags$a(href = 'http://microglia-seq.vm.duke.edu/microglia-seq/human-fetal-RNASeq/fetal_seq_mobile/', 'MOBILE SITE HERE'), style='text-align: center'),
               img(src="microglia.gif", height = '400px', width='505px', style = "display: block; margin-left: auto; margin-right: auto;"),
               tags$h5(""),
               fluidRow(column(width = 6,tags$br(), img(src="FetalTissue.png", height='100%', width='100%')),
