@@ -20,6 +20,12 @@ server <- function (input, output, session) {
               tags$h5("This website contains interactive visualizations and statistics of our bulk RNA sequencing data from
                       matched human fetal brain and placenta tissue (72-82 days post conception).",
                       style='text-align:center'),
+              tags$h3("",
+                      "Check out the published paper in Nature Metabolism here:",
+                      tags$a(href="https://www.nature.com/articles/s42255-022-00693-8", 
+                             "Link"), style = 'text-align: center'),
+              tags$h3("",tags$a(href="https://drive.google.com/file/d/1lMBxXs-rYz3GyLT__HDRpeZwK3H8pgt0/view?usp=sharing", 
+                             "PDF Full Text Link"), style = 'text-align: center'),
               tags$h3(
                 tags$a(href = 'http://microglia-seq.vm.duke.edu/microglia-seq/human-fetal-RNASeq/fetal_seq_mobile/', 'MOBILE SITE HERE'), style='text-align: center'),
               img(src="microglia.gif", height = '400px', width='505px', style = "display: block; margin-left: auto; margin-right: auto;"),
@@ -33,11 +39,8 @@ server <- function (input, output, session) {
               tags$h5(""),
               tags$h5("The", tags$strong("Data Table"), "tab will provide the TPM values for your gene of interest alongside available data (sex,
               5-HT levels, maternal triglyceride accumulation) for each tissue."))),
-              tags$h5(),
-              tags$h3("",
-                      "Check out the preprint",
-                      tags$a(href="https://www.biorxiv.org/content/10.1101/2021.11.12.468408v2", 
-                             "here!"), style = 'text-align: center')
+              tags$h5()
+
               )
     tagList(x)
   })
